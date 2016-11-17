@@ -1,0 +1,6 @@
+c:\users\michael harvey\documents\visual studio 2015\Projects\MoveFiles\MoveFiles\bin\Debug\MoveFiles.exe.config
+c:\users\michael harvey\documents\visual studio 2015\Projects\MoveFiles\MoveFiles\bin\Debug\MoveFiles.exe
+c:\users\michael harvey\documents\visual studio 2015\Projects\MoveFiles\MoveFiles\bin\Debug\MoveFiles.pdb
+c:\users\michael harvey\documents\visual studio 2015\Projects\MoveFiles\MoveFiles\obj\Debug\MoveFiles.csprojResolveAssemblyReference.cache
+c:\users\michael harvey\documents\visual studio 2015\Projects\MoveFiles\MoveFiles\obj\Debug\MoveFiles.exe
+c:\users\michael harvey\documents\visual studio 2015\Projects\MoveFiles\MoveFiles\obj\Debug\MoveFiles.pdb
