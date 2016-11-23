@@ -12,6 +12,21 @@ namespace MoveFiles
     {
         static string[] defaultEndings = new string[] { "*.dll", "*.exe" };
         static Process processNiad = new Process();
+        static string pathlocalplmrelease = ConfigurationManager.AppSettings["pathplmrelease"];
+        static string pathniadplm = ConfigurationManager.AppSettings["pathniadplm"];
+        static string pathlocalstoredebug = ConfigurationManager.AppSettings["pathlocalstoredebug"];
+        static string pathlocalstoreniad = ConfigurationManager.AppSettings["pathlocalstoreniad"];
+        static string pathamrelease = ConfigurationManager.AppSettings["pathamrelease"];
+        static string pathniadam = ConfigurationManager.AppSettings["pathniadam"];
+        static string pathamprocesssharecopy = ConfigurationManager.AppSettings["pathamprocesssharecopy"];
+        static string pathamprocessshare = ConfigurationManager.AppSettings["pathamprocessshare"];
+        static string pathlocalstorecopy = ConfigurationManager.AppSettings["pathlocalstorecopy"];
+        static string pathlocalstoreprod = ConfigurationManager.AppSettings["pathlocalstoreprod"];
+        static string pathlocalstorerelease = ConfigurationManager.AppSettings["pathlocalstorerelease"];
+        static string pathcrawlerprod = ConfigurationManager.AppSettings["pathcrawlerprod"];
+        static string pathcrawlercopy = ConfigurationManager.AppSettings["pathcrawlercopy"];
+        static string pathcrawlerrelease = ConfigurationManager.AppSettings["pathcrawlerrelease"];
+        static string pathcrawleramazon = ConfigurationManager.AppSettings["pathcrawleramazon"];
         
         static void Main(string[] args)
         {
@@ -19,8 +34,8 @@ namespace MoveFiles
             do
             {
                 Console.WriteLine("Select a command:");
-                Console.WriteLine("Copy PLM debug to niad: 1");
-                Console.WriteLine("Copy AM debug to niad: 2");
+                Console.WriteLine("Copy PLM release to niad: 1");
+                Console.WriteLine("Copy AM release to niad: 2");
                 Console.WriteLine("Copy localstore debug to niad: 3");
                 Console.WriteLine("Copy localstore release to processshare: 4");
                 Console.WriteLine("Copy AM release to processshare: 5");
@@ -38,6 +53,7 @@ namespace MoveFiles
                         CopyAMToNiad();
                         break;
                     case "3":
+                        CopyLocalStoreToNiad();
                         break;
                     case "4":
                         CopyLocalStoreToProduction();
@@ -58,28 +74,33 @@ namespace MoveFiles
         
         public static void CopyPLMToNiad()
         {
-            string pathlocalplmdebug = ConfigurationManager.AppSettings["pathplmdebug"];
-            string pathniadplm = ConfigurationManager.AppSettings["pathniadplm"];
-
-            CopyFiles(pathlocalplmdebug, pathniadplm, defaultEndings);
+            CopyFiles(pathlocalplmrelease, pathniadplm);
+        }
+        
+        public static void CopyLocalStoreToNiad()
+        {
+            CopyFiles(pathlocalstoredebug, pathlocalstoreniad);
         }
 
         public static void CopyAMToNiad()
         {
-            string pathamdebug = ConfigurationManager.AppSettings["pathamdebug"];
-            string pathniadam = ConfigurationManager.AppSettings["pathniadam"];
-
-            CopyFiles(pathamdebug, pathniadam, defaultEndings);
+            CopyFiles(pathamrelease, pathniadam, defaultEndings);
         }
 
         public static void CopyAMToProduction()
-        {
-            string pathamprocesssharecopy = ConfigurationManager.AppSettings["pathamprocesssharecopy"];
-            string pathamprocessshare = ConfigurationManager.AppSettings["pathamprocessshare"];
-            string pathamrelease = ConfigurationManager.AppSettings["pathamrelease"];
-            
+        {   
             string destpathcopy = System.IO.Path.Combine(pathamprocesssharecopy, DateTime.Now.ToString("yyyy-MM-dd"));
-                
+
+            int i = 1;
+            string append = string.Empty;
+            while (System.IO.Directory.Exists(destpathcopy + append))
+            {
+                append = string.Format("({0})", i.ToString());
+                i++;
+            }
+
+            destpathcopy = destpathcopy + append;
+
             System.IO.Directory.CreateDirectory(destpathcopy);
 
             CopyFiles(pathamprocessshare, destpathcopy, defaultEndings);
@@ -90,12 +111,18 @@ namespace MoveFiles
 
         public static void CopyLocalStoreToProduction()
         {
-            string pathlocalstorecopy = ConfigurationManager.AppSettings["pathlocalstoreprod"];
-            string pathlocalstoreprod = ConfigurationManager.AppSettings["pathlocalstoreprod"];
-            string pathlocalstorerelease = ConfigurationManager.AppSettings["pathlocalstorerelease"];
-
             string destpathcopy = System.IO.Path.Combine(pathlocalstorecopy, DateTime.Now.ToString("yyyy-MM-dd"));
 
+            int i = 1;
+            string append = string.Empty;
+            while (System.IO.Directory.Exists(destpathcopy + append))
+            {
+                append = string.Format("({0})", i.ToString());
+                i++;
+            }
+
+            destpathcopy = destpathcopy + append;
+            
             System.IO.Directory.CreateDirectory(destpathcopy);
 
             CopyFiles(pathlocalstoreprod, destpathcopy, defaultEndings);
@@ -105,12 +132,17 @@ namespace MoveFiles
         
         public static void CopyCrawlerToProduction()
         {
-            string pathcrawlerprod = ConfigurationManager.AppSettings["pathcrawlerprod"];
-            string pathcrawlercopy = ConfigurationManager.AppSettings["pathcrawlercopy"];
-            string pathcrawlerrelease = ConfigurationManager.AppSettings["pathcrawlerrelease"];
-            string pathcrawleramazon = ConfigurationManager.AppSettings["pathcrawleramazon"];
-
             string destpathcopy = System.IO.Path.Combine(pathcrawlercopy, DateTime.Now.ToString("yyyy-MM-dd"));
+
+            int i = 1;
+            string append = string.Empty;
+            while (System.IO.Directory.Exists(destpathcopy + append))
+            {
+                append = string.Format("({0})", i.ToString());
+                i++;
+            }
+
+            destpathcopy = destpathcopy + append;
 
             System.IO.Directory.CreateDirectory(destpathcopy);
 
@@ -121,15 +153,31 @@ namespace MoveFiles
             CopyFiles(pathcrawlerrelease, pathcrawleramazon, defaultEndings);
         }
         
+        public static void CopyFiles(string sourcePath, string destinationPath)
+        {
+            CopyFiles(sourcePath, destinationPath, null);
+        }
+
         public static void CopyFiles(string sourcePath, string destinationPath, string[] endings)
         {
             if (System.IO.Directory.Exists(sourcePath))
             {
                 List<string> filteredFiles = new List<string>();
 
-                foreach (string ending in endings)
+                if (endings != null)
                 {
-                    string[] files = System.IO.Directory.GetFiles(sourcePath, ending);
+                    foreach (string ending in endings)
+                    {
+                        string[] files = System.IO.Directory.GetFiles(sourcePath, ending);
+                        foreach (string f in files)
+                        {
+                            filteredFiles.Add(f);
+                        }
+                    }
+                }
+                else
+                {
+                    string[] files = System.IO.Directory.GetFiles(sourcePath);
                     foreach (string f in files)
                     {
                         filteredFiles.Add(f);
@@ -141,6 +189,7 @@ namespace MoveFiles
                     string filename = System.IO.Path.GetFileName(s);
                     string destfilepath = System.IO.Path.Combine(destinationPath, filename);
                     System.IO.File.Copy(s, destfilepath, true);
+                    System.Threading.Thread.Sleep(100);
                 }
             }
             else
