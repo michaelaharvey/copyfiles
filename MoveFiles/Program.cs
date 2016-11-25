@@ -27,7 +27,7 @@ namespace MoveFiles
         static string pathcrawlercopy = ConfigurationManager.AppSettings["pathcrawlercopy"];
         static string pathcrawlerrelease = ConfigurationManager.AppSettings["pathcrawlerrelease"];
         static string pathcrawleramazon = ConfigurationManager.AppSettings["pathcrawleramazon"];
-        
+
         static void Main(string[] args)
         {
             string input;
@@ -69,14 +69,14 @@ namespace MoveFiles
                         break;
                 }
 
-            } while (input != "e");    
+            } while (input != "e");
         }
-        
+
         public static void CopyPLMToNiad()
         {
             CopyFiles(pathlocalplmrelease, pathniadplm);
         }
-        
+
         public static void CopyLocalStoreToNiad()
         {
             CopyFiles(pathlocalstoredebug, pathlocalstoreniad);
@@ -88,7 +88,7 @@ namespace MoveFiles
         }
 
         public static void CopyAMToProduction()
-        {   
+        {
             string destpathcopy = System.IO.Path.Combine(pathamprocesssharecopy, DateTime.Now.ToString("yyyy-MM-dd"));
 
             int i = 1;
@@ -107,7 +107,7 @@ namespace MoveFiles
 
             CopyFiles(pathamrelease, pathamprocessshare, defaultEndings);
         }
-        
+
 
         public static void CopyLocalStoreToProduction()
         {
@@ -122,14 +122,14 @@ namespace MoveFiles
             }
 
             destpathcopy = destpathcopy + append;
-            
+
             System.IO.Directory.CreateDirectory(destpathcopy);
 
             CopyFiles(pathlocalstoreprod, destpathcopy, defaultEndings);
 
             CopyFiles(pathlocalstorerelease, pathlocalstoreprod, defaultEndings);
         }
-        
+
         public static void CopyCrawlerToProduction()
         {
             string destpathcopy = System.IO.Path.Combine(pathcrawlercopy, DateTime.Now.ToString("yyyy-MM-dd"));
@@ -152,7 +152,7 @@ namespace MoveFiles
 
             CopyFiles(pathcrawlerrelease, pathcrawleramazon, defaultEndings);
         }
-        
+
         public static void CopyFiles(string sourcePath, string destinationPath)
         {
             CopyFiles(sourcePath, destinationPath, null);
@@ -160,6 +160,7 @@ namespace MoveFiles
 
         public static void CopyFiles(string sourcePath, string destinationPath, string[] endings)
         {
+
             if (System.IO.Directory.Exists(sourcePath))
             {
                 List<string> filteredFiles = new List<string>();
@@ -183,19 +184,31 @@ namespace MoveFiles
                         filteredFiles.Add(f);
                     }
                 }
-                
+
                 foreach (string s in filteredFiles)
                 {
                     string filename = System.IO.Path.GetFileName(s);
                     string destfilepath = System.IO.Path.Combine(destinationPath, filename);
-                    System.IO.File.Copy(s, destfilepath, true);
-                    System.Threading.Thread.Sleep(100);
+                    try
+                    {
+                        System.IO.File.Copy(s, destfilepath, true);
+                        System.Threading.Thread.Sleep(100);
+                    }
+                    catch (Exception e)
+                    {
+                        Console.WriteLine(e.Message);
+                        Console.WriteLine(e.InnerException);
+                        Console.WriteLine(e.StackTrace);
+                        break;
+                    }
                 }
             }
             else
             {
                 Console.WriteLine("Source path does not exist!");
             }
+
+
         }
     }
 }
