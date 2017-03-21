@@ -12,20 +12,26 @@ namespace MoveFiles
     {
         static string[] defaultEndings = new string[] { "*.dll", "*.exe" };
         static Process processNiad = new Process();
+
         static string pathlocalplmrelease = ConfigurationManager.AppSettings["pathplmrelease"];
         static string pathniadplm = ConfigurationManager.AppSettings["pathniadplm"];
+
         static string pathlocalstoreniad = ConfigurationManager.AppSettings["pathlocalstoreniad"];
+        static string pathlocalstorecopy = ConfigurationManager.AppSettings["pathlocalstorecopy"];
+        static string pathlocalstoreprod = ConfigurationManager.AppSettings["pathlocalstoreprod"];
+        static string pathlocalstorerelease = ConfigurationManager.AppSettings["pathlocalstorerelease"];
+
         static string pathamrelease = ConfigurationManager.AppSettings["pathamrelease"];
         static string pathniadam = ConfigurationManager.AppSettings["pathniadam"];
         static string pathamprocesssharecopy = ConfigurationManager.AppSettings["pathamprocesssharecopy"];
         static string pathamprocessshare = ConfigurationManager.AppSettings["pathamprocessshare"];
-        static string pathlocalstorecopy = ConfigurationManager.AppSettings["pathlocalstorecopy"];
-        static string pathlocalstoreprod = ConfigurationManager.AppSettings["pathlocalstoreprod"];
-        static string pathlocalstorerelease = ConfigurationManager.AppSettings["pathlocalstorerelease"];
+        
         static string pathcrawlerprod = ConfigurationManager.AppSettings["pathcrawlerprod"];
         static string pathcrawlercopy = ConfigurationManager.AppSettings["pathcrawlercopy"];
         static string pathcrawlerrelease = ConfigurationManager.AppSettings["pathcrawlerrelease"];
         static string pathcrawleramazon = ConfigurationManager.AppSettings["pathcrawleramazon"];
+        static string pathcrawlerstaging = ConfigurationManager.AppSettings["pathcrawleramazon"];
+
 
         static void Main(string[] args)
         {
@@ -38,7 +44,8 @@ namespace MoveFiles
                 Console.WriteLine("Copy localstore release to niad: ===================== 3");
                 Console.WriteLine("Copy localstore release to processshare: ============= 4");
                 Console.WriteLine("Copy AM release to processshare: ===================== 5");
-                Console.WriteLine("Copy crawler release to processshare: ================ 6");
+                Console.WriteLine("Copy crawler release to processshare staging: ======== 6");
+                Console.WriteLine("Copy crawler staging to production: ================== 7");
                 Console.WriteLine("exit: ================================================ e");
 
                 input = Console.ReadLine();
@@ -61,7 +68,10 @@ namespace MoveFiles
                         CopyAMToProduction();
                         break;
                     case "6":
-                        CopyCrawlerToProduction();
+                        CopyCrawlerToStaging();
+                        break;
+                    case "7":
+                        CopyCrawlerStagingToProduction();
                         break;
 
                     default:
@@ -80,12 +90,17 @@ namespace MoveFiles
 
         private static void ReconnectToVPN()
         {
-            Console.WriteLine("Enter VPN Username:");
+            Console.WriteLine("Enter VPN Username or s to skip:");
+            
             string name = Console.ReadLine();
-            Console.WriteLine("Enter password to reconnect to VPN: ");
-            string pw = ReadPassword();
-            string command = string.Format(@"""DEV VPN"" ""{0}"" ""{1}""", name, pw);
-            Process.Start("rasdial.exe", command);
+
+            if (name != "s")
+            {
+                Console.WriteLine("Enter password to reconnect to VPN: ");
+                string pw = ReadPassword();
+                string command = string.Format(@"""DEV VPN"" ""{0}"" ""{1}""", name, pw);
+                Process.Start("rasdial.exe", command);
+            }
         }
 
         public static string ReadPassword()
@@ -143,18 +158,8 @@ namespace MoveFiles
 
         public static void CopyAMToProduction()
         {
-            string destpathcopy = System.IO.Path.Combine(pathamprocesssharecopy, DateTime.Now.ToString("yyyy-MM-dd"));
-
-            int i = 1;
-            string append = string.Empty;
-            while (System.IO.Directory.Exists(destpathcopy + append))
-            {
-                append = string.Format("({0})", i.ToString());
-                i++;
-            }
-
-            destpathcopy = destpathcopy + append;
-
+            string destpathcopy = GetBackupDestination(pathamprocesssharecopy);
+            
             System.IO.Directory.CreateDirectory(destpathcopy);
 
             CopyFiles(pathamprocessshare, destpathcopy, defaultEndings);
@@ -162,11 +167,9 @@ namespace MoveFiles
             CopyFiles(pathamrelease, pathamprocessshare, defaultEndings);
         }
 
-
-        public static void CopyLocalStoreToProduction()
+        private static string GetBackupDestination(string pathamprocesssharecopy)
         {
-            string destpathcopy = System.IO.Path.Combine(pathlocalstorecopy, DateTime.Now.ToString("yyyy-MM-dd"));
-
+            string destpathcopy = System.IO.Path.Combine(pathamprocesssharecopy, DateTime.Now.ToString("yyyy-MM-dd"));
             int i = 1;
             string append = string.Empty;
             while (System.IO.Directory.Exists(destpathcopy + append))
@@ -176,6 +179,13 @@ namespace MoveFiles
             }
 
             destpathcopy = destpathcopy + append;
+
+            return destpathcopy;
+        }
+
+        public static void CopyLocalStoreToProduction()
+        {
+            string destpathcopy = GetBackupDestination(pathlocalstorecopy);
 
             System.IO.Directory.CreateDirectory(destpathcopy);
 
@@ -184,33 +194,24 @@ namespace MoveFiles
             CopyFiles(pathlocalstorerelease, pathlocalstoreprod, defaultEndings);
         }
 
-        public static void CopyCrawlerToProduction()
+        public static void CopyCrawlerStagingToProduction()
         {
-            string destpathcopy = System.IO.Path.Combine(pathcrawlercopy, DateTime.Now.ToString("yyyy-MM-dd"));
-
-            int i = 1;
-            string append = string.Empty;
-            while (System.IO.Directory.Exists(destpathcopy + append))
-            {
-                append = string.Format("({0})", i.ToString());
-                i++;
-            }
-
-            destpathcopy = destpathcopy + append;
+            string destpathcopy = GetBackupDestination(pathcrawlercopy);
 
             System.IO.Directory.CreateDirectory(destpathcopy);
 
+            // backup what is in production to backup folder
             CopyFiles(pathcrawlerprod, destpathcopy, defaultEndings);
 
-            CopyFiles(pathcrawlerrelease, pathcrawlerprod, defaultEndings);
-
-            CopyFiles(pathcrawlerrelease, pathcrawleramazon, defaultEndings);
+            // copy staging to production
+            CopyFiles(pathcrawlerstaging, pathcrawlerprod, defaultEndings);
+            CopyFiles(pathcrawlerstaging, pathcrawleramazon, defaultEndings);
         }
 
-        //public static void CopyFiles(string sourcePath, string destinationPath)
-        //{
-        //    CopyFiles(sourcePath, destinationPath, null);
-        //}
+        public static void CopyCrawlerToStaging()
+        {
+            CopyFiles(pathcrawlerrelease, pathcrawlerstaging, defaultEndings);
+        }
 
         public static void CopyFiles(string sourcePath, string destinationPath, string[] endings)
         {
